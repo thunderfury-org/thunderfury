@@ -97,7 +97,6 @@ where
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use sea_orm::ActiveValue::Set;
     use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set};
 
     use crate::{
