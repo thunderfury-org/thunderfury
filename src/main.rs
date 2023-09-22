@@ -23,17 +23,20 @@ mod subscription;
 mod task;
 mod utils;
 
-async fn init_db(config_dir: &str) -> io::Result<DatabaseConnection> {
-    if config_dir.is_empty() {
-        panic!("config dir is empty");
-    }
+fn setup_sqlite_url(config_dir: &str) -> String {
+    let db_dir = format!("{config_dir}/db");
+    utils::fs::create_dir_all(&db_dir).unwrap();
+    format!("sqlite:{db_dir}/thunderfury.db?mode=rwc")
+}
 
-    let db_dir = format!("{}/db", config_dir);
-    utils::fs::create_dir_all(&db_dir)?;
+async fn init_db(manager: &Manager) -> io::Result<DatabaseConnection> {
+    let db_url = manager
+        .get_server_config()
+        .db_url
+        .as_deref()
+        .map_or_else(|| setup_sqlite_url(manager.get_config_dir()), |u| u.to_string());
 
-    let url = format!("sqlite:{}/thunderfury.db?mode=rwc", db_dir);
-
-    let mut opt = ConnectOptions::new(url);
+    let mut opt = ConnectOptions::new(db_url);
     opt.sqlx_logging(false).max_connections(10);
 
     Ok(Database::connect(opt).await.expect("database connection failed"))
@@ -45,21 +48,23 @@ async fn main() {
 
     match &cli.command {
         Commands::Server(args) => {
-            run_server(args.config_dir.trim()).await;
+            run_server(Manager::try_from(args.config_dir.trim()).unwrap()).await;
         }
         Commands::Migrate(args) => {
-            let db = init_db(args.config_dir.trim()).await.unwrap();
+            let manager = Manager::try_from(args.config_dir.trim()).unwrap();
+            let db = init_db(&manager).await.unwrap();
             migration::fresh(&db).await.unwrap();
         }
     }
 }
 
-async fn run_server(config_dir: &str) {
-    let file_appender = tracing_appender::rolling::daily(format!("{}/log", config_dir), "thunderfury.log");
+async fn run_server(manager: Manager) {
+    let file_appender =
+        tracing_appender::rolling::daily(format!("{}/log", manager.get_config_dir()), "thunderfury.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     logger::init(non_blocking);
 
-    let db = init_db(config_dir).await.unwrap();
+    let db = init_db(&manager).await.unwrap();
     migration::up(&db).await.unwrap();
 
     let state = AppState {
@@ -68,7 +73,7 @@ async fn run_server(config_dir: &str) {
             .timeout(std::time::Duration::from_secs(30))
             .build()
             .expect("failed to create http client"),
-        config: Manager::try_from(format!("{}/config.yaml", config_dir).as_str()).unwrap(),
+        config: manager,
     };
 
     // start background job
@@ -78,7 +83,7 @@ async fn run_server(config_dir: &str) {
     run_http_server(&state).await.unwrap();
 }
 
-async fn run_http_server(state: &AppState) -> std::io::Result<()> {
+async fn run_http_server(state: &AppState) -> io::Result<()> {
     let addr = state.config.get_server_address();
     info!("server starting on {}", addr);
 

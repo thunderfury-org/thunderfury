@@ -7,13 +7,14 @@ use sea_orm::{
 };
 use tracing::info;
 
-use super::{download, filter, provider};
 use crate::{
     common::{error::Result, state::AppState},
     entity::{episode, season, subscription, tv},
     library,
     utils::tmdb::{self, model::EpisodeDetail},
 };
+
+use super::{download, filter, provider};
 
 pub async fn run_tv_subscription(state: &AppState, sub: &subscription::Model) -> Result<()> {
     let tv_info = library::tv::get_or_fail(&state.db, sub.media_id).await?;
@@ -72,11 +73,11 @@ fn fix_episode_season_number(
 async fn find_episode_numbers_need_fetch(
     state: &AppState,
     tv_info: &tv::Model,
-    season_number: Option<u32>,
-) -> Result<HashMap<u32, HashSet<u32>>> {
+    season_number: Option<i32>,
+) -> Result<HashMap<i32, HashSet<i32>>> {
     let seasons = get_or_create_seasons(state, tv_info, season_number).await?;
 
-    let episodes: Vec<(u32, u32)> = episode::Entity::find()
+    let episodes: Vec<(i32, i32)> = episode::Entity::find()
         .select_only()
         .column(episode::Column::SeasonNumber)
         .column(episode::Column::EpisodeNumber)
@@ -96,10 +97,10 @@ async fn find_episode_numbers_need_fetch(
 async fn get_or_create_seasons(
     state: &AppState,
     tv_info: &tv::Model,
-    season_number: Option<u32>,
+    season_number: Option<i32>,
 ) -> Result<Vec<season::Model>> {
     let mut exists_seasons = get_all_exists_seasons(&state.db, tv_info.id, season_number).await?;
-    let exists_season_numbers: HashSet<u32> = exists_seasons.iter().map(|s| s.season_number).collect();
+    let exists_season_numbers: HashSet<i32> = exists_seasons.iter().map(|s| s.season_number).collect();
 
     match season_number {
         Some(season_number) => {
@@ -121,8 +122,8 @@ async fn get_or_create_seasons(
 
 async fn get_all_exists_seasons(
     db: &DatabaseConnection,
-    tv_id: u32,
-    season_number: Option<u32>,
+    tv_id: i32,
+    season_number: Option<i32>,
 ) -> Result<Vec<season::Model>> {
     match season_number {
         Some(season_number) => Ok(season::Entity::find()
@@ -137,7 +138,7 @@ async fn get_all_exists_seasons(
     }
 }
 
-async fn create_season(state: &AppState, tv_id: u32, tmdb_id: u32, season_number: u32) -> Result<season::Model> {
+async fn create_season(state: &AppState, tv_id: i32, tmdb_id: i32, season_number: i32) -> Result<season::Model> {
     info!("create season {} of tv {}", season_number, tv_id);
 
     let season_detail = tmdb::Client::try_from(state)?
@@ -167,8 +168,8 @@ async fn create_season(state: &AppState, tv_id: u32, tmdb_id: u32, season_number
 
 async fn batch_create_episodes(
     db: &DatabaseTransaction,
-    tv_id: u32,
-    season_number: u32,
+    tv_id: i32,
+    season_number: i32,
     episodes: &[EpisodeDetail],
 ) -> Result<()> {
     episode::Entity::insert_many(episodes.iter().map(|e| episode::ActiveModel {

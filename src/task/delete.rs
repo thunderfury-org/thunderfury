@@ -2,7 +2,7 @@ use sea_orm::{ConnectionTrait, EntityTrait};
 
 use crate::{common::error::Result, entity::task};
 
-pub async fn delete_task<C>(db: &C, task_id: u32) -> Result<()>
+pub async fn delete_task<C>(db: &C, task_id: i32) -> Result<()>
 where
     C: ConnectionTrait,
 {

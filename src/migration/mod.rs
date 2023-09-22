@@ -4,8 +4,6 @@ use sea_orm_migration::prelude::*;
 mod m20230428_165822_create_tv_table;
 mod m20230510_050508_create_season_table;
 mod m20230510_051935_create_episode_table;
-mod m20230602_104150_create_movie_table;
-mod m20230602_104200_create_genre_table;
 mod m20230602_104209_create_subscription_table;
 mod m20230808_045411_create_task_table;
 
@@ -18,8 +16,6 @@ impl MigratorTrait for Migrator {
             Box::new(m20230428_165822_create_tv_table::Migration),
             Box::new(m20230510_050508_create_season_table::Migration),
             Box::new(m20230510_051935_create_episode_table::Migration),
-            Box::new(m20230602_104150_create_movie_table::Migration),
-            Box::new(m20230602_104200_create_genre_table::Migration),
             Box::new(m20230602_104209_create_subscription_table::Migration),
             Box::new(m20230808_045411_create_task_table::Migration),
         ]

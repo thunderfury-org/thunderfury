@@ -6,10 +6,10 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "episode")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: u32,
-    pub tv_id: u32,
-    pub season_number: u32,
-    pub episode_number: u32,
+    pub id: i32,
+    pub tv_id: i32,
+    pub season_number: i32,
+    pub episode_number: i32,
     pub name: String,
     pub air_date: String,
     pub status: Status,

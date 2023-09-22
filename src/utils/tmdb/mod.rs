@@ -3,11 +3,12 @@ use std::fmt::Display;
 use reqwest::{IntoUrl, StatusCode};
 use serde::de::DeserializeOwned;
 
+use model::{SearchTvResponse, SearchTvResult, SeasonDetail, TvDetail};
+
 use crate::common::{
     error::{Error, NotFoundCode, Result},
     state::AppState,
 };
-use model::{SearchTvResponse, SearchTvResult, SeasonDetail, TvDetail};
 
 pub mod model;
 
@@ -52,7 +53,7 @@ impl<'a> Client<'a> {
         }
     }
 
-    pub async fn get_tv_detail(&self, tv_id: u32) -> Result<TvDetail> {
+    pub async fn get_tv_detail(&self, tv_id: i32) -> Result<TvDetail> {
         match self.get(format!("/tv/{}", tv_id), None).await {
             Ok(detail) => Ok(detail),
             Err(Error::NotFound(_, _)) => Err(Error::NotFound(
@@ -63,7 +64,7 @@ impl<'a> Client<'a> {
         }
     }
 
-    pub async fn get_season_detail(&self, tv_id: u32, season_number: u32) -> Result<SeasonDetail> {
+    pub async fn get_season_detail(&self, tv_id: i32, season_number: i32) -> Result<SeasonDetail> {
         match self.get(format!("/tv/{}/season/{}", tv_id, season_number), None).await {
             Ok(detail) => Ok(detail),
             Err(Error::NotFound(_, _)) => Err(Error::NotFound(

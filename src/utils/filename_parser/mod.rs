@@ -2,8 +2,9 @@ use std::collections::HashSet;
 
 use serde::Deserialize;
 
-use crate::entity::enums::FileType;
 use title::Title;
+
+use crate::entity::enums::FileType;
 
 mod episode;
 pub mod lang;
@@ -41,8 +42,8 @@ pub struct EpisodeInfo {
     pub extension: Option<String>,
     pub titles: Option<Vec<Title>>,
     pub release_group: Option<String>,
-    pub season_number: Option<u32>,
-    pub episode_number: Option<u32>,
+    pub season_number: Option<i32>,
+    pub episode_number: Option<i32>,
     pub resolution: Option<String>,
     pub subtitles: Option<Vec<String>>,
 }

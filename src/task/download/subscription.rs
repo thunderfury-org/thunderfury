@@ -36,7 +36,7 @@ where
     mark_subscriptions_done(db, sub_ids).await
 }
 
-async fn get_all_running_tv_subscription_ids<C>(db: &C, tv_id: u32, season_number: u32) -> Result<Vec<u32>>
+async fn get_all_running_tv_subscription_ids<C>(db: &C, tv_id: i32, season_number: i32) -> Result<Vec<i32>>
 where
     C: ConnectionTrait,
 {
@@ -52,7 +52,7 @@ where
         .await?)
 }
 
-async fn is_all_episodes_downloaded<C>(db: &C, tv_id: u32, season_number: u32) -> Result<bool>
+async fn is_all_episodes_downloaded<C>(db: &C, tv_id: i32, season_number: i32) -> Result<bool>
 where
     C: ConnectionTrait,
 {
@@ -63,7 +63,7 @@ where
         .count(db)
         .await?;
 
-    let season_episode_count: u32 = season::Entity::find()
+    let season_episode_count: i32 = season::Entity::find()
         .select_only()
         .column(season::Column::NumberOfEpisodes)
         .filter(season::Column::TvId.eq(tv_id))
@@ -76,7 +76,7 @@ where
     Ok((season_episode_count as u64) == downloaded_episode_count)
 }
 
-async fn mark_subscriptions_done<C>(db: &C, sub_ids: Vec<u32>) -> Result<()>
+async fn mark_subscriptions_done<C>(db: &C, sub_ids: Vec<i32>) -> Result<()>
 where
     C: ConnectionTrait,
 {
@@ -140,7 +140,7 @@ mod tests {
         Ok(())
     }
 
-    async fn prepare_tv_data<C>(db: &C) -> Result<u32>
+    async fn prepare_tv_data<C>(db: &C) -> Result<i32>
     where
         C: ConnectionTrait,
     {
@@ -208,7 +208,7 @@ mod tests {
         Ok(tv_id)
     }
 
-    async fn mark_all_episode_downloaded<C>(db: &C, tv_id: u32, season_number: u32) -> Result<()>
+    async fn mark_all_episode_downloaded<C>(db: &C, tv_id: i32, season_number: i32) -> Result<()>
     where
         C: ConnectionTrait,
     {

@@ -5,7 +5,7 @@ use crate::{
     entity::tv,
 };
 
-pub async fn get_or_fail<C>(db: &C, tv_id: u32) -> Result<tv::Model>
+pub async fn get_or_fail<C>(db: &C, tv_id: i32) -> Result<tv::Model>
 where
     C: ConnectionTrait,
 {
