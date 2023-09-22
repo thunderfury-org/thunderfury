@@ -97,6 +97,7 @@ where
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
+    use sea_orm::ActiveValue::Set;
     use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set};
 
     use crate::{
@@ -154,6 +155,8 @@ mod tests {
             original_language: Set("en".to_owned()),
             original_name: Set("test".to_owned()),
             overview: Set("test".to_owned()),
+            poster_path: Set("".to_owned()),
+            backdrop_path: Set("".to_owned()),
             create_time: Set(Utc::now()),
             ..Default::default()
         })
@@ -167,6 +170,7 @@ mod tests {
             air_date: Set("2022-01-01".to_owned()),
             number_of_episodes: Set(2),
             overview: Set("test".to_owned()),
+            poster_path: Set("".to_string()),
             create_time: Set(Utc::now()),
             ..Default::default()
         })
@@ -182,6 +186,7 @@ mod tests {
                 air_date: Set("2022-01-01".to_owned()),
                 status: Set(episode::Status::Waiting),
                 overview: Set("test".to_owned()),
+                still_path: Set("".to_owned()),
                 create_time: Set(Utc::now()),
                 ..Default::default()
             })
