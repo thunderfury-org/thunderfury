@@ -4,7 +4,6 @@ use sea_orm::{
     TransactionTrait,
 };
 
-use super::query;
 use crate::{
     common::{
         error::{Error, Result},
@@ -13,6 +12,8 @@ use crate::{
     entity::{enums::MediaType, subscription, tv},
     utils::tmdb::{self, model::TvDetail},
 };
+
+use super::query;
 
 pub async fn create_subscription(state: &AppState, request: &subscription::Model) -> Result<subscription::Model> {
     if let Some(exist_sub) = query::get_subscription_by_unique_id(&state.db, request.unique_id()).await? {
@@ -47,7 +48,7 @@ pub async fn create_subscription(state: &AppState, request: &subscription::Model
 async fn save_subscription(
     txn: &DatabaseTransaction,
     request: &subscription::Model,
-    media_id: u32,
+    media_id: i32,
 ) -> Result<subscription::Model> {
     let new_sub = subscription::ActiveModel {
         unique_id: Set(request.unique_id()),
@@ -69,7 +70,7 @@ async fn save_subscription(
     Ok(new_sub.insert(txn).await?)
 }
 
-async fn create_tv(state: &AppState, txn: &DatabaseTransaction, tmdb_id: u32) -> Result<tv::Model> {
+async fn create_tv(state: &AppState, txn: &DatabaseTransaction, tmdb_id: i32) -> Result<tv::Model> {
     if let Some(exists) = tv::Entity::find()
         .filter(tv::Column::TmdbId.eq(tmdb_id))
         .one(txn)
@@ -84,7 +85,7 @@ async fn create_tv(state: &AppState, txn: &DatabaseTransaction, tmdb_id: u32) ->
 }
 
 async fn save_tv(txn: &DatabaseTransaction, detail: &TvDetail) -> Result<tv::Model> {
-    let year: u32 = detail.first_air_date.split('-').next().unwrap_or("0").parse().unwrap();
+    let year: i32 = detail.first_air_date.split('-').next().unwrap_or("0").parse().unwrap();
 
     let new_tv = tv::ActiveModel {
         name: Set(detail.name.to_owned()),

@@ -9,14 +9,14 @@ use super::{
 #[sea_orm(table_name = "subscription")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: u32,
+    pub id: i32,
     pub unique_id: String,
     pub media_type: MediaType,
-    pub media_id: u32,
-    pub tmdb_id: u32,
+    pub media_id: i32,
+    pub tmdb_id: i32,
     pub resource_provider: Provider,
     pub resource_url: Option<String>,
-    pub season_number: Option<u32>,
+    pub season_number: Option<i32>,
     pub resolutions: Option<StringVec>,
     pub subtitles: Option<StringVec>,
     pub status: Status,

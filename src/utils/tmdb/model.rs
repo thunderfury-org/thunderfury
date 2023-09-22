@@ -10,15 +10,15 @@ where
 
 #[derive(Debug, Deserialize)]
 pub struct TvDetail {
-    pub id: u32,
+    pub id: i32,
     pub name: String,
     pub status: String,
     pub adult: bool,
     pub first_air_date: String,
     pub in_production: bool,
     pub last_air_date: String,
-    pub number_of_episodes: u32,
-    pub number_of_seasons: u32,
+    pub number_of_episodes: i32,
+    pub number_of_seasons: i32,
     pub original_language: String,
     pub original_name: String,
     pub overview: String,
@@ -30,8 +30,8 @@ pub struct TvDetail {
 
 #[derive(Debug, Deserialize)]
 pub struct SeasonDetail {
-    pub id: u32,
-    pub season_number: u32,
+    pub id: i32,
+    pub season_number: i32,
     pub air_date: String,
     pub overview: String,
     #[serde(deserialize_with = "nullable_string")]
@@ -41,9 +41,9 @@ pub struct SeasonDetail {
 
 #[derive(Debug, Deserialize)]
 pub struct EpisodeDetail {
-    pub id: u32,
-    pub season_number: u32,
-    pub episode_number: u32,
+    pub id: i32,
+    pub season_number: i32,
+    pub episode_number: i32,
     pub name: String,
     pub overview: String,
     #[serde(deserialize_with = "nullable_string")]
@@ -59,7 +59,7 @@ pub struct SearchTvResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct SearchTvResult {
-    pub id: u32,
+    pub id: i32,
     pub name: String,
     pub first_air_date: String,
     pub overview: String,

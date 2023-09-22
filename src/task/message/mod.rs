@@ -2,7 +2,6 @@ use chrono::Utc;
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 use tracing::error;
 
-use super::{delete, param::PushMessageParam, status};
 use crate::{
     common::{
         error::{Error, Result},
@@ -12,9 +11,11 @@ use crate::{
     library,
 };
 
+use super::{delete, param::PushMessageParam, status};
+
 mod telegram;
 
-const MAX_RETRY_COUNT: u32 = 5;
+const MAX_RETRY_COUNT: i32 = 5;
 
 pub async fn find_message_tasks_not_done(db: &DatabaseConnection) -> Result<Vec<task::Model>> {
     Ok(task::Entity::find()

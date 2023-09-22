@@ -17,7 +17,7 @@ pub struct SearchRequest {
 #[schema(as = provider::tmdb::MediaInfo)]
 pub struct MediaInfo {
     media_type: String,
-    tmdb_id: u32,
+    tmdb_id: i32,
     name: String,
     year: String,
     overview: String,

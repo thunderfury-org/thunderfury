@@ -26,7 +26,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Tv::TmdbId).integer().not_null())
                     .col(ColumnDef::new(Tv::OriginalLanguage).string().not_null())
                     .col(ColumnDef::new(Tv::OriginalName).string().not_null())
-                    .col(ColumnDef::new(Tv::Overview).string().not_null())
+                    .col(ColumnDef::new(Tv::Overview).text().not_null())
                     .col(ColumnDef::new(Tv::PosterPath).string().not_null())
                     .col(ColumnDef::new(Tv::BackdropPath).string().not_null())
                     .col(ColumnDef::new(Tv::CreateTime).timestamp().not_null())

@@ -36,7 +36,7 @@ where
     mark_subscriptions_done(db, sub_ids).await
 }
 
-async fn get_all_running_tv_subscription_ids<C>(db: &C, tv_id: u32, season_number: u32) -> Result<Vec<u32>>
+async fn get_all_running_tv_subscription_ids<C>(db: &C, tv_id: i32, season_number: i32) -> Result<Vec<i32>>
 where
     C: ConnectionTrait,
 {
@@ -52,7 +52,7 @@ where
         .await?)
 }
 
-async fn is_all_episodes_downloaded<C>(db: &C, tv_id: u32, season_number: u32) -> Result<bool>
+async fn is_all_episodes_downloaded<C>(db: &C, tv_id: i32, season_number: i32) -> Result<bool>
 where
     C: ConnectionTrait,
 {
@@ -63,7 +63,7 @@ where
         .count(db)
         .await?;
 
-    let season_episode_count: u32 = season::Entity::find()
+    let season_episode_count: i32 = season::Entity::find()
         .select_only()
         .column(season::Column::NumberOfEpisodes)
         .filter(season::Column::TvId.eq(tv_id))
@@ -76,7 +76,7 @@ where
     Ok((season_episode_count as u64) == downloaded_episode_count)
 }
 
-async fn mark_subscriptions_done<C>(db: &C, sub_ids: Vec<u32>) -> Result<()>
+async fn mark_subscriptions_done<C>(db: &C, sub_ids: Vec<i32>) -> Result<()>
 where
     C: ConnectionTrait,
 {
@@ -140,7 +140,7 @@ mod tests {
         Ok(())
     }
 
-    async fn prepare_tv_data<C>(db: &C) -> Result<u32>
+    async fn prepare_tv_data<C>(db: &C) -> Result<i32>
     where
         C: ConnectionTrait,
     {
@@ -154,6 +154,8 @@ mod tests {
             original_language: Set("en".to_owned()),
             original_name: Set("test".to_owned()),
             overview: Set("test".to_owned()),
+            poster_path: Set("".to_owned()),
+            backdrop_path: Set("".to_owned()),
             create_time: Set(Utc::now()),
             ..Default::default()
         })
@@ -167,6 +169,7 @@ mod tests {
             air_date: Set("2022-01-01".to_owned()),
             number_of_episodes: Set(2),
             overview: Set("test".to_owned()),
+            poster_path: Set("".to_string()),
             create_time: Set(Utc::now()),
             ..Default::default()
         })
@@ -182,6 +185,7 @@ mod tests {
                 air_date: Set("2022-01-01".to_owned()),
                 status: Set(episode::Status::Waiting),
                 overview: Set("test".to_owned()),
+                still_path: Set("".to_owned()),
                 create_time: Set(Utc::now()),
                 ..Default::default()
             })
@@ -208,7 +212,7 @@ mod tests {
         Ok(tv_id)
     }
 
-    async fn mark_all_episode_downloaded<C>(db: &C, tv_id: u32, season_number: u32) -> Result<()>
+    async fn mark_all_episode_downloaded<C>(db: &C, tv_id: i32, season_number: i32) -> Result<()>
     where
         C: ConnectionTrait,
     {

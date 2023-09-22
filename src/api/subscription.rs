@@ -1,15 +1,14 @@
 use actix_web::{get, post, web};
 use chrono::Utc;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::ActiveValue::Set;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use url::Url;
 
+use crate::api::model::EmptyResponse;
 use crate::{
     api::{
         error::{ok, ApiResult},
-        model::{
-            subscription::{NewSubscriptionRequest, SubscriptionDetail},
-            EmptyResponse,
-        },
+        model::subscription::{NewSubscriptionRequest, SubscriptionDetail},
     },
     common::{error::Error, state::AppState},
     entity::{enums::Provider, subscription},
@@ -92,7 +91,7 @@ pub async fn new_subscription(
     )
 )]
 #[post("/subscriptions/{id}/run")]
-pub async fn run_subscription(state: web::Data<AppState>, request: web::Path<(u32,)>) -> ApiResult<EmptyResponse> {
+pub async fn run_subscription(state: web::Data<AppState>, request: web::Path<(i32,)>) -> ApiResult<EmptyResponse> {
     subscription::Entity::update(subscription::ActiveModel {
         id: Set(request.0),
         next_run_time: Set(Utc::now()),

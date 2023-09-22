@@ -2,6 +2,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use serde::Deserialize;
 
+use crate::common::error::Error;
+
 #[derive(Debug, Default, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
@@ -24,6 +26,7 @@ pub struct AppConfig {
 pub struct ServerConfig {
     pub address: Option<String>,
     pub port: Option<u32>,
+    pub db_url: Option<String>,
     pub disable_background_task: Option<bool>,
 }
 
@@ -44,6 +47,7 @@ pub type MessageChannelConfig = HashMap<String, String>;
 
 #[derive(Clone)]
 pub struct Manager {
+    config_dir: Arc<String>,
     config: Arc<AppConfig>,
 }
 
@@ -53,6 +57,9 @@ const DEFAULT_PORT: u32 = 8080;
 pub const DEFAULT_LIBRARY_ROOT: &str = "/media/library";
 
 impl Manager {
+    pub fn get_config_dir(&self) -> &str {
+        return self.config_dir.as_str();
+    }
     pub fn get_server_config(&self) -> &ServerConfig {
         &self.config.server
     }
@@ -91,16 +98,23 @@ impl Manager {
 }
 
 impl TryFrom<&str> for Manager {
-    type Error = super::error::Error;
+    type Error = Error;
 
-    fn try_from(filepath: &str) -> Result<Self, Self::Error> {
-        crate::utils::fs::create_file_if_not_exists(filepath)?;
+    fn try_from(config_dir: &str) -> Result<Self, Self::Error> {
+        if config_dir.is_empty() {
+            return Err(Error::Internal("config dir is empty".to_string()));
+        }
 
-        match serde_yaml::from_str(std::fs::read_to_string(filepath)?.as_str()) {
+        let config_file = format!("{config_dir}/config.yaml");
+
+        crate::utils::fs::create_file_if_not_exists(config_file.as_str())?;
+
+        match serde_yaml::from_str(std::fs::read_to_string(config_file.as_str())?.as_str()) {
             Ok(config) => Ok(Self {
+                config_dir: Arc::new(config_dir.to_string()),
                 config: Arc::new(config),
             }),
-            Err(e) => Err(super::error::Error::Internal(format!("parse config file error, {}", e))),
+            Err(e) => Err(Error::Internal(format!("parse config file error, {}", e))),
         }
     }
 }
@@ -108,6 +122,7 @@ impl TryFrom<&str> for Manager {
 impl From<AppConfig> for Manager {
     fn from(value: AppConfig) -> Self {
         Self {
+            config_dir: Arc::new("".to_string()),
             config: Arc::new(value),
         }
     }

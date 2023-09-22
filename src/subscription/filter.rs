@@ -2,16 +2,17 @@ use std::collections::{HashMap, HashSet};
 
 use tracing::info;
 
-use super::provider::EpisodeResource;
 use crate::entity::subscription;
+
+use super::provider::EpisodeResource;
 
 pub fn filter_episode<'a>(
     resources: &'a Vec<EpisodeResource>,
     sub: &'a subscription::Model,
-    episode_numbers_need_fetch: &HashMap<u32, HashSet<u32>>,
+    episode_numbers_need_fetch: &HashMap<i32, HashSet<i32>>,
 ) -> Vec<&'a EpisodeResource> {
     let mut res = vec![];
-    let mut episode_added: HashSet<(u32, u32)> = HashSet::new();
+    let mut episode_added: HashSet<(i32, i32)> = HashSet::new();
 
     for r in resources {
         if r.episode.season_number.is_none() {

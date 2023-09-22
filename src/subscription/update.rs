@@ -4,7 +4,7 @@ use tracing::error;
 
 use crate::entity::subscription;
 
-pub async fn update_next_run_time(db: &DatabaseConnection, sub_id: u32, period: Duration) {
+pub async fn update_next_run_time(db: &DatabaseConnection, sub_id: i32, period: Duration) {
     match subscription::Entity::update(subscription::ActiveModel {
         id: Set(sub_id),
         last_run_time: Set(Some(Utc::now())),

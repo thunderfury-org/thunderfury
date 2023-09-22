@@ -5,7 +5,7 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set};
 
 use crate::{common::error::Result, entity::task};
 
-pub async fn update_status_to_running<C>(db: &C, task_id: u32, gid: &str) -> Result<()>
+pub async fn update_status_to_running<C>(db: &C, task_id: i32, gid: &str) -> Result<()>
 where
     C: ConnectionTrait,
 {
@@ -23,7 +23,7 @@ where
     Ok(())
 }
 
-pub async fn update_external_task_id<C>(db: &C, task_id: u32, gid: &str) -> Result<()>
+pub async fn update_external_task_id<C>(db: &C, task_id: i32, gid: &str) -> Result<()>
 where
     C: ConnectionTrait,
 {
@@ -39,7 +39,7 @@ where
     Ok(())
 }
 
-pub async fn update_status_to_done<C>(db: &C, task_id: u32) -> Result<()>
+pub async fn update_status_to_done<C>(db: &C, task_id: i32) -> Result<()>
 where
     C: ConnectionTrait,
 {
@@ -57,7 +57,7 @@ where
     Ok(())
 }
 
-pub async fn update_status_to_failed<C>(db: &C, task_id: u32, error_msg: &str) -> Result<()>
+pub async fn update_status_to_failed<C>(db: &C, task_id: i32, error_msg: &str) -> Result<()>
 where
     C: ConnectionTrait,
 {
@@ -75,7 +75,7 @@ where
     Ok(())
 }
 
-pub async fn update_status_to_retry<C>(db: &C, task_id: u32, retry_count: u32, error_msg: &str) -> Result<()>
+pub async fn update_status_to_retry<C>(db: &C, task_id: i32, retry_count: i32, error_msg: &str) -> Result<()>
 where
     C: ConnectionTrait,
 {

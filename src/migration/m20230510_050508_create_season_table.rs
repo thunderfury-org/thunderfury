@@ -22,7 +22,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Season::SeasonNumber).integer().not_null())
                     .col(ColumnDef::new(Season::AirDate).string().not_null())
                     .col(ColumnDef::new(Season::NumberOfEpisodes).integer().not_null())
-                    .col(ColumnDef::new(Season::Overview).string().not_null())
+                    .col(ColumnDef::new(Season::Overview).text().not_null())
                     .col(ColumnDef::new(Season::PosterPath).string().not_null())
                     .col(ColumnDef::new(Season::CreateTime).timestamp().not_null())
                     .index(

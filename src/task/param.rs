@@ -17,11 +17,11 @@ impl task::Model {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DownloadMediaFileParam {
     pub media_type: enums::MediaType,
-    pub media_id: u32,
-    pub year: u32,
+    pub media_id: i32,
+    pub year: i32,
     pub original_name: String,
-    pub season_number: Option<u32>,
-    pub episode_number: Option<u32>,
+    pub season_number: Option<i32>,
+    pub episode_number: Option<i32>,
     pub file_type: enums::FileType,
     pub file_ext: String,
     pub file_url: String,
@@ -32,11 +32,11 @@ pub struct DownloadMediaFileParam {
 #[serde(tag = "type", content = "param")]
 pub enum PushMessageParam {
     EpisodeDownloaded {
-        tv_id: u32,
-        season_number: u32,
-        episode_number: u32,
+        tv_id: i32,
+        season_number: i32,
+        episode_number: i32,
     },
     MovieDownloaded {
-        movie_id: u32,
+        movie_id: i32,
     },
 }

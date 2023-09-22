@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "task")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: u32,
+    pub id: i32,
     pub action: Action,
     pub status: Status,
     pub param: String,
@@ -13,7 +13,7 @@ pub struct Model {
     pub begin_time: Option<DateTimeUtc>,
     pub end_time: Option<DateTimeUtc>,
     pub error_msg: Option<String>,
-    pub retry_count: Option<u32>,
+    pub retry_count: Option<i32>,
     pub next_retry_time: Option<DateTimeUtc>,
 }
 

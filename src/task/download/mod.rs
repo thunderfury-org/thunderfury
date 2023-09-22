@@ -25,7 +25,7 @@ mod submit;
 mod subscription;
 
 lazy_static::lazy_static!(
-    static ref DOWNLOAD_TASK_LIMIT_MAP: HashMap<enums::Downloader, u32> = HashMap::from([
+    static ref DOWNLOAD_TASK_LIMIT_MAP: HashMap<enums::Downloader, i32> = HashMap::from([
         (enums::Downloader::Alist, 2),
         (enums::Downloader::Bt, 5),
     ]);
@@ -41,7 +41,7 @@ pub async fn find_download_tasks_not_done(db: &DatabaseConnection) -> Result<Vec
 }
 
 pub async fn run_tasks(state: &AppState, tasks: Vec<task::Model>) {
-    let mut current_downloading_count_map: HashMap<enums::Downloader, u32> =
+    let mut current_downloading_count_map: HashMap<enums::Downloader, i32> =
         DOWNLOAD_TASK_LIMIT_MAP.keys().map(|d| (*d, 0)).collect();
 
     for t in &tasks {
@@ -77,7 +77,7 @@ async fn run_one_task(state: &AppState, t: &task::Model, task_param: &DownloadMe
     }
 }
 
-async fn handle_queued_task(state: &AppState, task_id: u32, task_param: &DownloadMediaFileParam) -> Result<bool> {
+async fn handle_queued_task(state: &AppState, task_id: i32, task_param: &DownloadMediaFileParam) -> Result<bool> {
     info!(task_id, "submit queued task to downloader, {:?}", task_param);
 
     let gid = submit::submit_task(state, task_param).await?;
@@ -117,7 +117,7 @@ async fn handle_running_task(state: &AppState, t: &task::Model, task_param: &Dow
 
 async fn handle_aria2_task_status(
     state: &AppState,
-    task_id: u32,
+    task_id: i32,
     task_param: &DownloadMediaFileParam,
     task_status: aria2::Status,
 ) -> Result<bool> {
@@ -149,7 +149,7 @@ async fn handle_aria2_task_status(
 
 async fn on_task_error(
     state: &AppState,
-    task_id: u32,
+    task_id: i32,
     task_param: &DownloadMediaFileParam,
     error_msg: &str,
 ) -> Result<()> {
@@ -163,7 +163,7 @@ async fn on_task_error(
     Ok(())
 }
 
-async fn on_task_complete(state: &AppState, task_id: u32, task_param: &DownloadMediaFileParam) -> Result<()> {
+async fn on_task_complete(state: &AppState, task_id: i32, task_param: &DownloadMediaFileParam) -> Result<()> {
     info!(task_id, "download task complete");
 
     let p = dir::link_downloaded_files(state.config.get_library_root(), task_param)?;
