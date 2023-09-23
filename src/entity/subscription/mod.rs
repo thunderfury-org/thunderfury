@@ -1,8 +1,8 @@
 use sea_orm::entity::prelude::*;
 
-use super::{
-    column_type::StringVec,
+use crate::common::{
     enums::{MediaType, Provider},
+    types::StringVec,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, DeriveEntityModel, Eq)]

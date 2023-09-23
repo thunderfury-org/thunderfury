@@ -9,15 +9,14 @@ use tracing::info;
 
 use crate::{
     common::{error::Result, state::AppState},
-    entity::{episode, season, subscription, tv},
-    library,
+    entity::{subscription, tv},
     utils::tmdb::{self, model::EpisodeDetail},
 };
 
 use super::{download, filter, provider};
 
 pub async fn run_tv_subscription(state: &AppState, sub: &subscription::Model) -> Result<()> {
-    let tv_info = library::tv::get_or_fail(&state.db, sub.media_id).await?;
+    let tv_info = tv::query::get_or_fail(&state.db, sub.media_id).await?;
 
     let episode_numbers_need_fetch = find_episode_numbers_need_fetch(state, &tv_info, sub.season_number).await?;
     if episode_numbers_need_fetch.is_empty() {
@@ -40,7 +39,7 @@ pub async fn run_tv_subscription(state: &AppState, sub: &subscription::Model) ->
             a.episode.episode_number.cmp(&b.episode.episode_number)
         }
     });
-    download::batch_save_episode_download_task(&state.db, &tv_info, need_download_resources).await?;
+    download::batch_save_episode_download_task(state, &tv_info, need_download_resources).await?;
 
     Ok(())
 }

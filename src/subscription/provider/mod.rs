@@ -1,6 +1,9 @@
 use crate::{
-    common::{error::Result, state::AppState},
-    entity::enums,
+    common::{
+        enums::{Downloader, Provider},
+        error::Result,
+        state::AppState,
+    },
     utils::filename_parser::EpisodeInfo,
 };
 
@@ -9,21 +12,21 @@ pub mod rss;
 
 #[derive(Debug)]
 pub struct EpisodeResource {
-    pub provider: enums::Provider,
+    pub provider: Provider,
     pub file_url: String,
     pub file_size: u64,
-    pub file_downloader: enums::Downloader,
+    pub file_downloader: Downloader,
     pub episode: EpisodeInfo,
     pub raw_name: String,
 }
 
 pub async fn fetch_episode_resources(
     state: &AppState,
-    provider: &enums::Provider,
+    provider: &Provider,
     resource_url: &Option<String>,
 ) -> Result<Vec<EpisodeResource>> {
     match provider {
-        enums::Provider::Alist => alist::fetch_episodes(state, resource_url.as_ref().unwrap()).await,
-        enums::Provider::Rss => rss::fetch_episodes(state, resource_url.as_ref().unwrap()).await,
+        Provider::Alist => alist::fetch_episodes(state, resource_url.as_ref().unwrap()).await,
+        Provider::Rss => rss::fetch_episodes(state, resource_url.as_ref().unwrap()).await,
     }
 }

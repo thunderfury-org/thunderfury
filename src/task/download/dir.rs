@@ -1,9 +1,9 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
+    common::enums::{FileType, MediaType},
     common::error::{Error, Result},
-    entity::enums::{FileType, MediaType},
-    task::param::DownloadMediaFileParam,
+    entity::task::param::DownloadMediaFileParam,
     utils::{filename_parser::EpisodeInfo, fs},
 };
 
@@ -182,8 +182,8 @@ fn get_subtitle_filename_lang(lang: &str, index: usize) -> String {
 mod tests {
     use super::get_download_dir;
     use crate::{
-        entity::enums::{Downloader, FileType, MediaType},
-        task::param::DownloadMediaFileParam,
+        common::enums::{Downloader, FileType, MediaType},
+        entity::task::param::DownloadMediaFileParam,
     };
 
     const LIBRARY_ROOT: &str = "/media";

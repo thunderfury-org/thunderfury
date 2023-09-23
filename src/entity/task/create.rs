@@ -2,11 +2,11 @@ use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ConnectionTrait, Set};
 use serde::Serialize;
 
-use super::param::{DownloadMediaFileParam, PushMessageParam};
-use crate::{
-    common::error::Result,
-    entity::task::{self, Action},
+use super::{
+    param::{DownloadMediaFileParam, PushMessageParam},
+    Action, ActiveModel, Status,
 };
+use crate::common::error::Result;
 
 async fn create_task<C, T>(db: &C, action: Action, param: &T) -> Result<()>
 where
@@ -15,9 +15,9 @@ where
 {
     let param_string = serde_json::to_string(param)?;
 
-    task::ActiveModel {
+    ActiveModel {
         action: Set(action),
-        status: Set(task::Status::Queued),
+        status: Set(Status::Queued),
         param: Set(param_string),
         create_time: Set(Utc::now()),
         ..Default::default()

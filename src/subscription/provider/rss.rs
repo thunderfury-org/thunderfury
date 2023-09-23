@@ -3,10 +3,10 @@ use tracing::info;
 use super::EpisodeResource;
 use crate::{
     common::{
+        enums::{Downloader, Provider},
         error::{Error, Result},
         state::AppState,
     },
-    entity::enums,
     utils::filename_parser::EpisodeInfo,
 };
 
@@ -19,10 +19,10 @@ pub async fn fetch_episodes(state: &AppState, url: &str) -> Result<Vec<EpisodeRe
                 .items()
                 .iter()
                 .map(|i| EpisodeResource {
-                    provider: enums::Provider::Rss,
+                    provider: Provider::Rss,
                     file_url: i.enclosure.clone().unwrap().url,
                     file_size: i.enclosure.clone().unwrap().length.parse().unwrap(),
-                    file_downloader: enums::Downloader::Bt,
+                    file_downloader: Downloader::Bt,
                     episode: EpisodeInfo::from(i.title.clone().unwrap().as_str()),
                     raw_name: i.title.clone().unwrap(),
                 })

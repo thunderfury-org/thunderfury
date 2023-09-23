@@ -1,8 +1,11 @@
 use tracing::info;
 
 use crate::{
-    common::{error::Result, state::AppState},
-    entity::enums,
+    common::{
+        enums::{Downloader, FileType, Provider},
+        error::Result,
+        state::AppState,
+    },
     utils::{alist, filename_parser::EpisodeInfo},
 };
 
@@ -17,14 +20,14 @@ pub async fn fetch_episodes(state: &AppState, url: &str) -> Result<Vec<EpisodeRe
         .into_iter()
         .filter(|f| !f.is_dir)
         .map(|f| EpisodeResource {
-            provider: enums::Provider::Alist,
+            provider: Provider::Alist,
             file_url: f.path,
             file_size: f.size,
-            file_downloader: enums::Downloader::Alist,
+            file_downloader: Downloader::Alist,
             episode: EpisodeInfo::from(f.name.as_str()),
             raw_name: f.name,
         })
-        .filter(|r| r.episode.file_type != enums::FileType::Unknown)
+        .filter(|r| r.episode.file_type != FileType::Unknown)
         .collect();
 
     info!("fetched {} episode resources from alist {}", res.len(), url);

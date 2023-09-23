@@ -2,9 +2,8 @@ use chrono::Utc;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Set};
 
 use crate::{
-    common::error::Result,
-    entity::{enums::MediaType, episode, season, subscription},
-    task::param::DownloadMediaFileParam,
+    common::{enums::MediaType, error::Result},
+    entity::task::param::DownloadMediaFileParam,
 };
 
 pub async fn mark_subscription_done_if_complete<C>(db: &C, task_param: &DownloadMediaFileParam) -> Result<()>
@@ -100,12 +99,15 @@ mod tests {
     use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set};
 
     use crate::{
-        common::error::Result,
-        entity::{
+        common::{
             enums::{MediaType, Provider},
-            episode, season, subscription, tv,
+            error::Result,
         },
-        task::param::DownloadMediaFileParam,
+        entity::{
+            subscription,
+            task::param::DownloadMediaFileParam,
+            tv::{self, episode, season},
+        },
         test,
     };
 

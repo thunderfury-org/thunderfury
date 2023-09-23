@@ -2,9 +2,8 @@ use std::collections::HashSet;
 
 use serde::Deserialize;
 
+use crate::common::enums::FileType;
 use title::Title;
-
-use crate::entity::enums::FileType;
 
 mod episode;
 pub mod lang;

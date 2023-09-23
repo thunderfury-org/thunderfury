@@ -1,20 +1,18 @@
 use std::collections::HashMap;
 
-use sea_orm::{
-    ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder, TransactionTrait,
-};
+use sea_orm::{DatabaseTransaction, TransactionTrait};
 use tracing::{error, info};
 
 use crate::{
     common::{
+        enums,
         error::{Error, Result},
         state::AppState,
     },
-    entity::{enums, task},
-    task::{
-        create,
+    entity::task::{
+        self, create,
         param::{DownloadMediaFileParam, PushMessageParam},
-        status,
+        update,
     },
     utils::aria2,
 };
@@ -30,15 +28,6 @@ lazy_static::lazy_static!(
         (enums::Downloader::Bt, 5),
     ]);
 );
-
-pub async fn find_download_tasks_not_done(db: &DatabaseConnection) -> Result<Vec<task::Model>> {
-    Ok(task::Entity::find()
-        .filter(task::Column::Action.eq(task::Action::DownloadMediaFile))
-        .filter(task::Column::Status.is_in([task::Status::Queued, task::Status::Running]))
-        .order_by_asc(task::Column::Id)
-        .all(db)
-        .await?)
-}
 
 pub async fn run_tasks(state: &AppState, tasks: Vec<task::Model>) {
     let mut current_downloading_count_map: HashMap<enums::Downloader, i32> =
@@ -83,7 +72,7 @@ async fn handle_queued_task(state: &AppState, task_id: i32, task_param: &Downloa
     let gid = submit::submit_task(state, task_param).await?;
 
     let txn = state.db.begin().await?;
-    status::update_status_to_running(&txn, task_id, &gid).await?;
+    update::update_status_to_running(&txn, task_id, &gid).await?;
     media::update_status_to_downloading(&txn, task_param, &gid).await?;
     txn.commit().await?;
 
@@ -104,7 +93,7 @@ async fn handle_running_task(state: &AppState, t: &task::Model, task_param: &Dow
             let gid = submit::submit_task(state, task_param).await?;
 
             let txn = state.db.begin().await?;
-            status::update_external_task_id(&txn, t.id, &gid).await?;
+            update::update_external_task_id(&txn, t.id, &gid).await?;
             media::update_external_task_id(&txn, task_param, &gid).await?;
             txn.commit().await?;
 
@@ -156,7 +145,7 @@ async fn on_task_error(
     info!(task_id, "download task error: {}", error_msg);
 
     let txn = state.db.begin().await?;
-    status::update_status_to_failed(&txn, task_id, error_msg).await?;
+    update::update_status_to_failed(&txn, task_id, error_msg).await?;
     media::update_status_to_waiting(&txn, task_param).await?;
     txn.commit().await?;
 
@@ -169,7 +158,7 @@ async fn on_task_complete(state: &AppState, task_id: i32, task_param: &DownloadM
     let p = dir::link_downloaded_files(state.config.get_library_root(), task_param)?;
 
     let txn = state.db.begin().await?;
-    status::update_status_to_done(&txn, task_id).await?;
+    update::update_status_to_done(&txn, task_id).await?;
     media::update_status_to_downloaded(&txn, &p).await?;
     subscription::mark_subscription_done_if_complete(&txn, &p).await?;
     send_task_complete_message(&txn, &p).await?;

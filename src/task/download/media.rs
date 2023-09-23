@@ -1,11 +1,7 @@
 use chrono::Utc;
-use sea_orm::{ColumnTrait, DatabaseTransaction, EntityTrait, QueryFilter, Set};
+use sea_orm::{DatabaseTransaction, Set};
 
-use crate::{
-    common::error::Result,
-    entity::{enums, episode},
-    task::param,
-};
+use crate::common::error::Result;
 
 pub async fn update_status_to_downloading(
     db: &DatabaseTransaction,

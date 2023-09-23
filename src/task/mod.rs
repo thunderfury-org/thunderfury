@@ -1,25 +1,20 @@
 use tracing::error;
 
-use crate::common::state::AppState;
+use crate::{common::state::AppState, entity::task};
 
-pub mod create;
-pub mod param;
-
-mod delete;
 mod download;
 mod message;
-mod status;
 
 pub async fn run_download_tasks(state: &AppState) {
-    match download::find_download_tasks_not_done(&state.db).await {
+    match task::query::find_all_tasks_need_run(&state.db, task::Action::DownloadMediaFile).await {
         Ok(tasks) => download::run_tasks(state, tasks).await,
-        Err(e) => error!("find tasks not done error: {}", e),
+        Err(e) => error!("find download media file tasks need run error: {}", e),
     }
 }
 
 pub async fn run_message_tasks(state: &AppState) {
-    match message::find_message_tasks_not_done(&state.db).await {
+    match task::query::find_all_tasks_need_run(&state.db, task::Action::PushMessage).await {
         Ok(tasks) => message::run_tasks(state, tasks).await,
-        Err(e) => error!("find tasks not done error: {}", e),
+        Err(e) => error!("find push message tasks need run error: {}", e),
     }
 }

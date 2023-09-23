@@ -1,5 +1,11 @@
 use sea_orm::entity::prelude::*;
 
+pub mod create;
+pub mod delete;
+pub mod param;
+pub mod query;
+pub mod update;
+
 #[derive(Clone, Debug, Default, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "task")]
 pub struct Model {
@@ -15,6 +21,15 @@ pub struct Model {
     pub error_msg: Option<String>,
     pub retry_count: Option<i32>,
     pub next_retry_time: Option<DateTimeUtc>,
+}
+
+impl Model {
+    pub fn deserialize_param<'a, T>(&'a self) -> crate::common::error::Result<T>
+    where
+        T: serde::de::Deserialize<'a>,
+    {
+        Ok(serde_json::from_str(self.param.as_str())?)
+    }
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

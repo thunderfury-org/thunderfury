@@ -1,6 +1,6 @@
 use sea_orm::{Database, DatabaseConnection};
 
-use crate::migration;
+use crate::entity::migration;
 
 pub async fn init_test_db() -> DatabaseConnection {
     let db = Database::connect("sqlite::memory:")
