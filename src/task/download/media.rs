@@ -1,15 +1,18 @@
 use chrono::Utc;
 use sea_orm::{DatabaseTransaction, Set};
 
-use crate::common::error::Result;
+use crate::{
+    common::{enums::MediaType, error::Result},
+    entity::{task::param::DownloadMediaFileParam, tv::episode},
+};
 
 pub async fn update_status_to_downloading(
     db: &DatabaseTransaction,
-    task_param: &param::DownloadMediaFileParam,
+    task_param: &DownloadMediaFileParam,
     gid: &str,
 ) -> Result<()> {
     match task_param.media_type {
-        enums::MediaType::Tv => {
+        MediaType::Tv => {
             episode::Entity::update_many()
                 .set(episode::ActiveModel {
                     status: Set(episode::Status::Downloading),
@@ -23,7 +26,7 @@ pub async fn update_status_to_downloading(
                 .exec(db)
                 .await?;
         }
-        enums::MediaType::Movie => todo!(),
+        MediaType::Movie => todo!(),
     }
 
     Ok(())
@@ -31,11 +34,11 @@ pub async fn update_status_to_downloading(
 
 pub async fn update_external_task_id(
     db: &DatabaseTransaction,
-    task_param: &param::DownloadMediaFileParam,
+    task_param: &DownloadMediaFileParam,
     gid: &str,
 ) -> Result<()> {
     match task_param.media_type {
-        enums::MediaType::Tv => {
+        MediaType::Tv => {
             episode::Entity::update_many()
                 .set(episode::ActiveModel {
                     external_task_id: Set(Some(gid.to_owned())),
@@ -48,18 +51,15 @@ pub async fn update_external_task_id(
                 .exec(db)
                 .await?;
         }
-        enums::MediaType::Movie => todo!(),
+        MediaType::Movie => todo!(),
     }
 
     Ok(())
 }
 
-pub async fn update_status_to_downloaded(
-    db: &DatabaseTransaction,
-    task_param: &param::DownloadMediaFileParam,
-) -> Result<()> {
+pub async fn update_status_to_downloaded(db: &DatabaseTransaction, task_param: &DownloadMediaFileParam) -> Result<()> {
     match task_param.media_type {
-        enums::MediaType::Tv => {
+        MediaType::Tv => {
             episode::Entity::update_many()
                 .set(episode::ActiveModel {
                     status: Set(episode::Status::Downloaded),
@@ -74,31 +74,24 @@ pub async fn update_status_to_downloaded(
                 .exec(db)
                 .await?;
         }
-        enums::MediaType::Movie => todo!(),
+        MediaType::Movie => todo!(),
     }
 
     Ok(())
 }
 
-pub async fn update_status_to_waiting(
-    db: &DatabaseTransaction,
-    task_param: &param::DownloadMediaFileParam,
-) -> Result<()> {
+pub async fn update_status_to_waiting(db: &DatabaseTransaction, task_param: &DownloadMediaFileParam) -> Result<()> {
     match task_param.media_type {
-        enums::MediaType::Tv => {
-            episode::Entity::update_many()
-                .set(episode::ActiveModel {
-                    status: Set(episode::Status::Waiting),
-                    ..Default::default()
-                })
-                .filter(episode::Column::TvId.eq(task_param.media_id))
-                .filter(episode::Column::SeasonNumber.eq(task_param.season_number.unwrap()))
-                .filter(episode::Column::EpisodeNumber.eq(task_param.episode_number.unwrap()))
-                .filter(episode::Column::Status.eq(episode::Status::Downloading))
-                .exec(db)
-                .await?;
+        MediaType::Tv => {
+            episode::update::update_status_to_waiting(
+                db,
+                task_param.media_id,
+                task_param.season_number.unwrap(),
+                task_param.episode_number.unwrap(),
+            )
+            .await?
         }
-        enums::MediaType::Movie => todo!(),
+        MediaType::Movie => todo!(),
     }
 
     Ok(())

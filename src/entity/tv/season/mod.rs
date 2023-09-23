@@ -1,5 +1,7 @@
 use sea_orm::entity::prelude::*;
 
+pub mod query;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "season")]
 pub struct Model {

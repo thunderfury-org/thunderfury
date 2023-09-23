@@ -5,6 +5,9 @@ use crate::common::{
     types::StringVec,
 };
 
+pub mod query;
+pub mod update;
+
 #[derive(Clone, Debug, Default, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "subscription")]
 pub struct Model {

@@ -5,7 +5,7 @@ use tracing::{error, info};
 
 use crate::{
     common::{
-        enums,
+        enums::{Downloader, MediaType},
         error::{Error, Result},
         state::AppState,
     },
@@ -23,14 +23,14 @@ mod submit;
 mod subscription;
 
 lazy_static::lazy_static!(
-    static ref DOWNLOAD_TASK_LIMIT_MAP: HashMap<enums::Downloader, i32> = HashMap::from([
-        (enums::Downloader::Alist, 2),
-        (enums::Downloader::Bt, 5),
+    static ref DOWNLOAD_TASK_LIMIT_MAP: HashMap<Downloader, i32> = HashMap::from([
+        (Downloader::Alist, 2),
+        (Downloader::Bt, 5),
     ]);
 );
 
 pub async fn run_tasks(state: &AppState, tasks: Vec<task::Model>) {
-    let mut current_downloading_count_map: HashMap<enums::Downloader, i32> =
+    let mut current_downloading_count_map: HashMap<Downloader, i32> =
         DOWNLOAD_TASK_LIMIT_MAP.keys().map(|d| (*d, 0)).collect();
 
     for t in &tasks {
@@ -168,7 +168,7 @@ async fn on_task_complete(state: &AppState, task_id: i32, task_param: &DownloadM
 
 async fn send_task_complete_message(db: &DatabaseTransaction, p: &DownloadMediaFileParam) -> Result<()> {
     match p.media_type {
-        enums::MediaType::Tv => {
+        MediaType::Tv => {
             create::create_send_message_task(
                 db,
                 &PushMessageParam::EpisodeDownloaded {
@@ -179,7 +179,7 @@ async fn send_task_complete_message(db: &DatabaseTransaction, p: &DownloadMediaF
             )
             .await
         }
-        enums::MediaType::Movie => {
+        MediaType::Movie => {
             create::create_send_message_task(db, &PushMessageParam::MovieDownloaded { movie_id: p.media_id }).await
         }
     }
