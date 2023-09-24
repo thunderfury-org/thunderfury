@@ -1,22 +1,17 @@
-use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, DatabaseTransaction, EntityTrait, QueryFilter, Set,
-    TransactionTrait,
-};
+use sea_orm::{DatabaseTransaction, TransactionTrait};
 
 use crate::{
     common::{
+        enums::MediaType,
         error::{Error, Result},
         state::AppState,
     },
-    entity::{enums::MediaType, subscription, tv},
-    utils::tmdb::{self, model::TvDetail},
+    entity::{subscription, tv},
+    utils::tmdb,
 };
 
-use super::query;
-
 pub async fn create_subscription(state: &AppState, request: &subscription::Model) -> Result<subscription::Model> {
-    if let Some(exist_sub) = query::get_subscription_by_unique_id(&state.db, request.unique_id()).await? {
+    if let Some(exist_sub) = subscription::query::get_by_unique_id(&state.db, request.unique_id().as_str()).await? {
         return Ok(exist_sub);
     }
 
@@ -39,69 +34,50 @@ pub async fn create_subscription(state: &AppState, request: &subscription::Model
         MediaType::Movie => todo!(),
     };
 
-    let sub = save_subscription(&txn, request, media_id).await?;
+    let sub = subscription::create::create_subscription(
+        &txn,
+        subscription::create::NewSubscription {
+            unique_id: request.unique_id(),
+            media_type: request.media_type,
+            media_id,
+            tmdb_id: request.tmdb_id,
+            resource_provider: request.resource_provider,
+            resource_url: request.resource_url.clone(),
+            season_number: request.season_number,
+            resolutions: request.resolutions.clone(),
+            subtitles: request.subtitles.clone(),
+        },
+    )
+    .await?;
     txn.commit().await?;
 
     Ok(sub)
 }
 
-async fn save_subscription(
-    txn: &DatabaseTransaction,
-    request: &subscription::Model,
-    media_id: i32,
-) -> Result<subscription::Model> {
-    let new_sub = subscription::ActiveModel {
-        unique_id: Set(request.unique_id()),
-        media_type: Set(request.media_type.to_owned()),
-        media_id: Set(media_id),
-        tmdb_id: Set(request.tmdb_id),
-        resource_provider: Set(request.resource_provider.to_owned()),
-        resource_url: Set(request.resource_url.to_owned()),
-        season_number: Set(request.season_number),
-        resolutions: Set(request.resolutions.to_owned()),
-        subtitles: Set(request.subtitles.to_owned()),
-        status: Set(subscription::Status::Running),
-        last_run_time: NotSet,
-        next_run_time: Set(Utc::now()),
-        create_time: Set(Utc::now()),
-        ..Default::default()
-    };
-
-    Ok(new_sub.insert(txn).await?)
-}
-
 async fn create_tv(state: &AppState, txn: &DatabaseTransaction, tmdb_id: i32) -> Result<tv::Model> {
-    if let Some(exists) = tv::Entity::find()
-        .filter(tv::Column::TmdbId.eq(tmdb_id))
-        .one(txn)
-        .await?
-    {
+    if let Some(exists) = tv::query::get_by_tmdb_id(txn, tmdb_id).await? {
         return Ok(exists);
     }
 
     // not exists, create new tv
     let detail = tmdb::Client::try_from(state)?.get_tv_detail(tmdb_id).await?;
-    save_tv(txn, &detail).await
-}
 
-async fn save_tv(txn: &DatabaseTransaction, detail: &TvDetail) -> Result<tv::Model> {
     let year: i32 = detail.first_air_date.split('-').next().unwrap_or("0").parse().unwrap();
-
-    let new_tv = tv::ActiveModel {
-        name: Set(detail.name.to_owned()),
-        year: Set(year),
-        status: Set(detail.status.to_owned()),
-        first_air_date: Set(detail.first_air_date.to_owned()),
-        number_of_seasons: Set(detail.number_of_seasons),
-        tmdb_id: Set(detail.id),
-        original_language: Set(detail.original_language.to_owned()),
-        original_name: Set(detail.original_name.to_owned()),
-        overview: Set(detail.overview.to_owned()),
-        poster_path: Set(detail.poster_path.to_owned()),
-        backdrop_path: Set(detail.backdrop_path.to_owned()),
-        create_time: Set(Utc::now()),
-        ..Default::default()
-    };
-
-    Ok(new_tv.insert(txn).await?)
+    tv::create::create_tv(
+        txn,
+        tv::create::NewTv {
+            name: detail.name,
+            year,
+            status: detail.status,
+            first_air_date: detail.first_air_date,
+            number_of_seasons: detail.number_of_seasons,
+            tmdb_id,
+            original_language: detail.original_language,
+            original_name: detail.original_name,
+            overview: detail.overview,
+            poster_path: detail.poster_path,
+            backdrop_path: detail.backdrop_path,
+        },
+    )
+    .await
 }

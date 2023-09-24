@@ -7,13 +7,12 @@ use sea_orm::{
 };
 use tracing::info;
 
+use super::{download, filter, provider};
 use crate::{
     common::{error::Result, state::AppState},
     entity::{subscription, tv},
     utils::tmdb::{self, model::EpisodeDetail},
 };
-
-use super::{download, filter, provider};
 
 pub async fn run_tv_subscription(state: &AppState, sub: &subscription::Model) -> Result<()> {
     let tv_info = tv::query::get_or_fail(&state.db, sub.media_id).await?;

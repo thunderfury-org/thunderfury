@@ -1,13 +1,12 @@
 use utoipa::OpenApi;
 
-use super::{genre, library, model, provider, subscription};
+use super::{library, model, provider, subscription};
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
         library::list_tvs,
         library::list_movies,
-        genre::list_genres,
         subscription::list_subscriptions,
         subscription::new_subscription,
         subscription::run_subscription,

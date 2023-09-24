@@ -26,7 +26,7 @@ where
     let tv_id = task_param.media_id;
     let season_number = task_param.season_number.unwrap();
 
-    let sub_ids = subscription::query::get_all_running_tv_subscription_ids(db, tv_id, season_number).await?;
+    let sub_ids = subscription::query::find_all_running_tv_subscription_ids(db, tv_id, season_number).await?;
     if sub_ids.is_empty() {
         return Ok(());
     }

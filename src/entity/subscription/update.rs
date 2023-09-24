@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{Duration, Utc};
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set};
 
 use super::{ActiveModel, Column, Entity, Status};
@@ -18,6 +18,22 @@ where
         .filter(Column::Status.eq(Status::Running))
         .exec(db)
         .await?;
+
+    Ok(())
+}
+
+pub async fn update_next_run_time<C>(db: &C, sub_id: i32, period: Duration) -> Result<()>
+where
+    C: ConnectionTrait,
+{
+    Entity::update(ActiveModel {
+        id: Set(sub_id),
+        last_run_time: Set(Some(Utc::now())),
+        next_run_time: Set(Utc::now() + period),
+        ..Default::default()
+    })
+    .exec(db)
+    .await?;
 
     Ok(())
 }

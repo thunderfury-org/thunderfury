@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 
+pub mod create;
 pub mod episode;
 pub mod query;
 pub mod season;
