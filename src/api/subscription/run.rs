@@ -3,7 +3,7 @@ use actix_web::{post, web};
 use crate::{
     api::{
         error::{ok, ApiResult},
-        model::EmptyResponse,
+        response::EmptyResponse,
     },
     common::state::AppState,
     entity::subscription::update,

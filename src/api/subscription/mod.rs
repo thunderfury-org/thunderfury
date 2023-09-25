@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::model::library::{MovieDetail, TvDetail};
+use super::{movie::MovieDetail, tv::TvDetail};
 use crate::{
     common::{
         enums::{MediaType, Provider},

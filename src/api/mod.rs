@@ -3,17 +3,19 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod error;
+mod genre;
 mod image;
-mod library;
-mod model;
+mod movie;
 mod provider;
+mod response;
 mod subscription;
 mod swagger;
+mod tv;
 
 pub fn api(cfg: &mut web::ServiceConfig) {
     let apis = web::scope("/api")
-        .service(library::list_tvs)
-        .service(library::list_movies)
+        .service(tv::query::list_tvs)
+        .service(movie::query::list_movies)
         .service(subscription::query::list_subscriptions)
         .service(subscription::create::new_subscription)
         .service(subscription::run::run_subscription)

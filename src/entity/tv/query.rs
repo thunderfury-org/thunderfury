@@ -19,3 +19,20 @@ where
 {
     Ok(Entity::find().filter(Column::TmdbId.eq(tmdb_id)).one(db).await?)
 }
+
+pub async fn find_all_tvs<C>(db: &C) -> Result<Vec<Model>>
+where
+    C: ConnectionTrait,
+{
+    Ok(Entity::find().all(db).await?)
+}
+
+pub async fn find_tvs_by_ids<C>(db: &C, ids: Vec<i32>) -> Result<Vec<Model>>
+where
+    C: ConnectionTrait,
+{
+    if ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    Ok(Entity::find().filter(Column::Id.is_in(ids)).all(db).await?)
+}
