@@ -2,9 +2,8 @@ use std::collections::HashSet;
 
 use serde::Deserialize;
 
+use crate::common::enums::FileType;
 use title::Title;
-
-use crate::entity::enums::FileType;
 
 mod episode;
 pub mod lang;
@@ -26,13 +25,12 @@ impl From<&str> for FileType {
         }
 
         if VIDEO_EXT.contains(val) {
-            return FileType::Video;
+            FileType::Video
+        } else if SUBTITLE_EXT.contains(val) {
+            FileType::Subtitle
+        } else {
+            FileType::Unknown
         }
-        if SUBTITLE_EXT.contains(val) {
-            return FileType::Subtitle;
-        }
-
-        FileType::Unknown
     }
 }
 

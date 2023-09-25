@@ -7,6 +7,7 @@ use tracing::info;
 
 use cli::{Cli, Commands};
 use common::{config::Manager, state::AppState};
+use entity::migration;
 
 #[cfg(test)]
 mod test;
@@ -16,9 +17,7 @@ mod cli;
 mod common;
 mod entity;
 mod job;
-mod library;
 mod logger;
-mod migration;
 mod subscription;
 mod task;
 mod utils;

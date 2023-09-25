@@ -1,10 +1,12 @@
-use chrono::Utc;
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Set};
+use sea_orm::ConnectionTrait;
 
 use crate::{
-    common::error::Result,
-    entity::{enums::MediaType, episode, season, subscription},
-    task::param::DownloadMediaFileParam,
+    common::{enums::MediaType, error::Result},
+    entity::{
+        subscription,
+        task::param::DownloadMediaFileParam,
+        tv::{episode, season},
+    },
 };
 
 pub async fn mark_subscription_done_if_complete<C>(db: &C, task_param: &DownloadMediaFileParam) -> Result<()>
@@ -24,7 +26,7 @@ where
     let tv_id = task_param.media_id;
     let season_number = task_param.season_number.unwrap();
 
-    let sub_ids = get_all_running_tv_subscription_ids(db, tv_id, season_number).await?;
+    let sub_ids = subscription::query::find_all_running_tv_subscription_ids(db, tv_id, season_number).await?;
     if sub_ids.is_empty() {
         return Ok(());
     }
@@ -33,65 +35,16 @@ where
         return Ok(());
     }
 
-    mark_subscriptions_done(db, sub_ids).await
-}
-
-async fn get_all_running_tv_subscription_ids<C>(db: &C, tv_id: i32, season_number: i32) -> Result<Vec<i32>>
-where
-    C: ConnectionTrait,
-{
-    Ok(subscription::Entity::find()
-        .select_only()
-        .column(subscription::Column::Id)
-        .filter(subscription::Column::MediaType.eq(MediaType::Tv))
-        .filter(subscription::Column::MediaId.eq(tv_id))
-        .filter(subscription::Column::SeasonNumber.eq(season_number))
-        .filter(subscription::Column::Status.eq(subscription::Status::Running))
-        .into_tuple()
-        .all(db)
-        .await?)
+    subscription::update::mark_subscriptions_done(db, sub_ids).await
 }
 
 async fn is_all_episodes_downloaded<C>(db: &C, tv_id: i32, season_number: i32) -> Result<bool>
 where
     C: ConnectionTrait,
 {
-    let downloaded_episode_count = episode::Entity::find()
-        .filter(episode::Column::TvId.eq(tv_id))
-        .filter(episode::Column::SeasonNumber.eq(season_number))
-        .filter(episode::Column::Status.eq(episode::Status::Downloaded))
-        .count(db)
-        .await?;
-
-    let season_episode_count: i32 = season::Entity::find()
-        .select_only()
-        .column(season::Column::NumberOfEpisodes)
-        .filter(season::Column::TvId.eq(tv_id))
-        .filter(season::Column::SeasonNumber.eq(season_number))
-        .into_tuple()
-        .one(db)
-        .await?
-        .unwrap();
-
-    Ok((season_episode_count as u64) == downloaded_episode_count)
-}
-
-async fn mark_subscriptions_done<C>(db: &C, sub_ids: Vec<i32>) -> Result<()>
-where
-    C: ConnectionTrait,
-{
-    subscription::Entity::update_many()
-        .set(subscription::ActiveModel {
-            status: Set(subscription::Status::Done),
-            finish_time: Set(Some(Utc::now())),
-            ..Default::default()
-        })
-        .filter(subscription::Column::Id.is_in(sub_ids))
-        .filter(subscription::Column::Status.eq(subscription::Status::Running))
-        .exec(db)
-        .await?;
-
-    Ok(())
+    let downloaded = episode::query::count_downloaded_episode_of_season(db, tv_id, season_number).await?;
+    let season_episode_count = season::query::get_season_episode_number(db, tv_id, season_number).await?;
+    Ok(season_episode_count == downloaded)
 }
 
 #[cfg(test)]
@@ -100,12 +53,15 @@ mod tests {
     use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, Set};
 
     use crate::{
-        common::error::Result,
-        entity::{
+        common::{
             enums::{MediaType, Provider},
-            episode, season, subscription, tv,
+            error::Result,
         },
-        task::param::DownloadMediaFileParam,
+        entity::{
+            subscription,
+            task::param::DownloadMediaFileParam,
+            tv::{self, episode, season},
+        },
         test,
     };
 

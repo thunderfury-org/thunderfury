@@ -1,5 +1,3 @@
-use chrono::Utc;
-use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 use tracing::error;
 
 use crate::{
@@ -7,31 +5,18 @@ use crate::{
         error::{Error, Result},
         state::AppState,
     },
-    entity::task,
-    library,
+    entity::{
+        movie,
+        task::{delete, param::PushMessageParam, update, Model, Status},
+        tv,
+    },
 };
-
-use super::{delete, param::PushMessageParam, status};
 
 mod telegram;
 
 const MAX_RETRY_COUNT: i32 = 5;
 
-pub async fn find_message_tasks_not_done(db: &DatabaseConnection) -> Result<Vec<task::Model>> {
-    Ok(task::Entity::find()
-        .filter(task::Column::Action.eq(task::Action::PushMessage))
-        .filter(task::Column::Status.is_in([task::Status::Queued, task::Status::Running]))
-        .filter(
-            Condition::any()
-                .add(task::Column::NextRetryTime.is_null())
-                .add(task::Column::NextRetryTime.lte(Utc::now())),
-        )
-        .order_by_asc(task::Column::Id)
-        .all(db)
-        .await?)
-}
-
-pub async fn run_tasks(state: &AppState, tasks: Vec<task::Model>) {
+pub async fn run_tasks(state: &AppState, tasks: Vec<Model>) {
     for t in &tasks {
         let message: PushMessageParam = t.deserialize_param().unwrap();
 
@@ -45,19 +30,19 @@ pub async fn run_tasks(state: &AppState, tasks: Vec<task::Model>) {
     }
 }
 
-async fn run_one_task(state: &AppState, t: &task::Model, message: &PushMessageParam) -> Result<()> {
+async fn run_one_task(state: &AppState, t: &Model, message: &PushMessageParam) -> Result<()> {
     let mut resend = false;
 
     match t.status {
-        task::Status::Queued => {
-            status::update_status_to_running(&state.db, t.id, "").await?;
+        Status::Queued => {
+            update::update_status_to_running(&state.db, t.id, "").await?;
         }
-        task::Status::Running => {
+        Status::Running => {
             // may be crashed or killed when send message
             // need retry sending message
             resend = true;
         }
-        task::Status::Done | task::Status::Failed => {
+        Status::Done | Status::Failed => {
             error!(task_id = t.id, "task alread done or failed, shoud not go to here");
             return Ok(());
         }
@@ -66,7 +51,7 @@ async fn run_one_task(state: &AppState, t: &task::Model, message: &PushMessagePa
     let msg = format_message(state, message, resend).await?;
 
     match telegram::send_message(state, msg.as_str()).await {
-        Ok(_) => status::update_status_to_done(&state.db, t.id).await,
+        Ok(_) => update::update_status_to_done(&state.db, t.id).await,
         Err(Error::NotFound(_, _)) => {
             // channel not config, delete this task
             delete::delete_task(&state.db, t.id).await
@@ -74,9 +59,9 @@ async fn run_one_task(state: &AppState, t: &task::Model, message: &PushMessagePa
         Err(e) => {
             let retry_count = t.retry_count.unwrap_or(1);
             if retry_count > MAX_RETRY_COUNT {
-                status::update_status_to_failed(&state.db, t.id, e.to_string().as_str()).await?;
+                update::update_status_to_failed(&state.db, t.id, e.to_string().as_str()).await?;
             } else {
-                status::update_status_to_retry(&state.db, t.id, retry_count, e.to_string().as_str()).await?;
+                update::update_status_to_retry(&state.db, t.id, retry_count, e.to_string().as_str()).await?;
             }
             Err(e)
         }
@@ -90,14 +75,14 @@ async fn format_message(state: &AppState, message: &PushMessageParam, resend: bo
             season_number,
             episode_number,
         } => {
-            let tv_info = library::tv::get_or_fail(&state.db, *tv_id).await?;
+            let tv_info = tv::query::get_or_fail(&state.db, *tv_id).await?;
             format!(
                 "{} ({}) 第 {} 季 第 {} 集下载完成",
                 tv_info.name, tv_info.year, season_number, episode_number
             )
         }
         PushMessageParam::MovieDownloaded { movie_id } => {
-            let movie_info = library::movie::get_or_fail(&state.db, *movie_id).await?;
+            let movie_info = movie::query::get_or_fail(&state.db, *movie_id).await?;
             format!("{} ({}) 下载完成", movie_info.name, movie_info.year)
         }
     };

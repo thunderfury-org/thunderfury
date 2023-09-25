@@ -1,26 +1,24 @@
 use utoipa::OpenApi;
 
-use super::{genre, library, model, provider, subscription};
+use super::{movie, provider, response, subscription, tv};
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        library::list_tvs,
-        library::list_movies,
-        genre::list_genres,
-        subscription::list_subscriptions,
-        subscription::new_subscription,
-        subscription::run_subscription,
+        tv::query::list_tvs,
+        movie::query::list_movies,
+        subscription::query::list_subscriptions,
+        subscription::create::new_subscription,
+        subscription::run::run_subscription,
         provider::alist::list_files,
         provider::tmdb::search_tv,
     ),
     components(schemas(
-        model::library::TvDetail,
-        model::library::MovieDetail,
-        model::genre::Genre,
-        model::subscription::SubscriptionDetail,
-        model::subscription::NewSubscriptionRequest,
-        model::EmptyResponse,
+        tv::TvDetail,
+        movie::MovieDetail,
+        subscription::SubscriptionDetail,
+        subscription::NewSubscriptionRequest,
+        response::EmptyResponse,
         provider::alist::File,
         provider::tmdb::MediaInfo,
     ))
