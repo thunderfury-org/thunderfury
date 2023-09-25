@@ -1,16 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
-use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, QueryFilter, QuerySelect, Set,
-    TransactionTrait,
-};
+use sea_orm::{DatabaseConnection, DatabaseTransaction, TransactionTrait};
 use tracing::info;
 
 use super::{download, filter, provider};
 use crate::{
     common::{error::Result, state::AppState},
-    entity::{subscription, tv},
+    entity::{
+        subscription,
+        tv::{self, episode, season},
+    },
     utils::tmdb::{self, model::EpisodeDetail},
 };
 
@@ -75,16 +74,12 @@ async fn find_episode_numbers_need_fetch(
 ) -> Result<HashMap<i32, HashSet<i32>>> {
     let seasons = get_or_create_seasons(state, tv_info, season_number).await?;
 
-    let episodes: Vec<(i32, i32)> = episode::Entity::find()
-        .select_only()
-        .column(episode::Column::SeasonNumber)
-        .column(episode::Column::EpisodeNumber)
-        .filter(episode::Column::TvId.eq(tv_info.id))
-        .filter(episode::Column::SeasonNumber.is_in(seasons.iter().map(|s| s.season_number)))
-        .filter(episode::Column::Status.eq(episode::Status::Waiting))
-        .into_tuple()
-        .all(&state.db)
-        .await?;
+    let episodes = episode::query::find_waiting_episode_numbers_by_season_numbers(
+        &state.db,
+        tv_info.id,
+        seasons.iter().map(|s| s.season_number).collect(),
+    )
+    .await?;
 
     Ok(episodes.iter().fold(HashMap::new(), |mut m, e| {
         m.entry(e.0).or_default().insert(e.1);
@@ -124,15 +119,10 @@ async fn get_all_exists_seasons(
     season_number: Option<i32>,
 ) -> Result<Vec<season::Model>> {
     match season_number {
-        Some(season_number) => Ok(season::Entity::find()
-            .filter(season::Column::TvId.eq(tv_id))
-            .filter(season::Column::SeasonNumber.eq(season_number))
-            .all(db)
-            .await?),
-        None => Ok(season::Entity::find()
-            .filter(season::Column::TvId.eq(tv_id))
-            .all(db)
-            .await?),
+        Some(season_number) => Ok(season::query::get_by_tv_id_and_season_number(db, tv_id, season_number)
+            .await?
+            .map_or_else(Vec::new, |s| vec![s])),
+        None => Ok(season::query::find_all_by_tv_id(db, tv_id).await?),
     }
 }
 
@@ -146,19 +136,19 @@ async fn create_season(state: &AppState, tv_id: i32, tmdb_id: i32, season_number
     let txn = state.db.begin().await?;
 
     batch_create_episodes(&txn, tv_id, season_number, &season_detail.episodes).await?;
+    let created = season::create::create_season(
+        &txn,
+        season::create::NewSeason {
+            tv_id,
+            season_number,
+            air_date: season_detail.air_date,
+            number_of_episodes: season_detail.episodes.len() as i32,
+            overview: season_detail.overview,
+            poster_path: season_detail.poster_path,
+        },
+    )
+    .await?;
 
-    let new_season = season::ActiveModel {
-        tv_id: Set(tv_id),
-        season_number: Set(season_number),
-        air_date: Set(season_detail.air_date),
-        number_of_episodes: Set(season_detail.episodes.len().try_into().unwrap()),
-        overview: Set(season_detail.overview),
-        poster_path: Set(season_detail.poster_path.to_owned()),
-        create_time: Set(Utc::now()),
-        ..Default::default()
-    };
-
-    let created = new_season.insert(&txn).await?;
     txn.commit().await?;
 
     Ok(created)
@@ -170,19 +160,21 @@ async fn batch_create_episodes(
     season_number: i32,
     episodes: &[EpisodeDetail],
 ) -> Result<()> {
-    episode::Entity::insert_many(episodes.iter().map(|e| episode::ActiveModel {
-        tv_id: Set(tv_id),
-        season_number: Set(season_number),
-        episode_number: Set(e.episode_number),
-        name: Set(e.name.to_owned()),
-        air_date: Set(e.air_date.to_owned()),
-        status: Set(episode::Status::Waiting),
-        overview: Set(e.overview.to_owned()),
-        still_path: Set(e.still_path.to_owned()),
-        create_time: Set(Utc::now()),
-        ..Default::default()
-    }))
-    .exec(db)
+    episode::create::batch_create_episodes(
+        db,
+        episodes
+            .iter()
+            .map(|e| episode::create::NewEpisode {
+                tv_id,
+                season_number,
+                episode_number: e.episode_number,
+                name: &e.name,
+                air_date: &e.air_date,
+                overview: &e.overview,
+                still_path: &e.still_path,
+            })
+            .collect(),
+    )
     .await?;
 
     Ok(())

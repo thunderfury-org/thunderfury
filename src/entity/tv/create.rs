@@ -1,5 +1,5 @@
 use chrono::Utc;
-use sea_orm::{ConnectionTrait, Set};
+use sea_orm::{ActiveModelTrait, ConnectionTrait, Set};
 
 use super::{ActiveModel, Model};
 use crate::common::error::Result;

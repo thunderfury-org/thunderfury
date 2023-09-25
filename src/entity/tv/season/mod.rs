@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 
+pub mod create;
 pub mod query;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]

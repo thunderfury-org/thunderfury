@@ -36,7 +36,7 @@ async fn run_one_subscription(state: &AppState, sub: &Model) {
         }
     };
 
-    if let Err(e) = update::update_next_run_time(&state.db, sub.id, Duration::minutes(30)).await {
+    if let Err(e) = update::mark_run_finished(&state.db, sub.id, duration).await {
         error!(sub_id = sub.id, "update next run time error: {}", e);
     }
 }

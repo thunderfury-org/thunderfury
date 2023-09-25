@@ -25,13 +25,12 @@ impl From<&str> for FileType {
         }
 
         if VIDEO_EXT.contains(val) {
-            return FileType::Video;
+            FileType::Video
+        } else if SUBTITLE_EXT.contains(val) {
+            FileType::Subtitle
+        } else {
+            FileType::Unknown
         }
-        if SUBTITLE_EXT.contains(val) {
-            return FileType::Subtitle;
-        }
-
-        FileType::Unknown
     }
 }
 

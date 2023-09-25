@@ -1,17 +1,64 @@
+use actix_web::{post, web};
 use sea_orm::{DatabaseTransaction, TransactionTrait};
+use url::Url;
 
+use super::{NewSubscriptionRequest, SubscriptionDetail};
 use crate::{
+    api::error::{ok, ApiResult},
     common::{
-        enums::MediaType,
+        enums::{MediaType, Provider},
         error::{Error, Result},
         state::AppState,
     },
-    entity::{subscription, tv},
+    entity::{
+        subscription::{create, query, Model},
+        tv,
+    },
     utils::tmdb,
 };
 
-pub async fn create_subscription(state: &AppState, request: &subscription::Model) -> Result<subscription::Model> {
-    if let Some(exist_sub) = subscription::query::get_by_unique_id(&state.db, request.unique_id().as_str()).await? {
+#[utoipa::path(
+    post,
+    context_path = "/api",
+    request_body = NewSubscriptionRequest,
+    responses(
+        (status = 200, body = SubscriptionDetail),
+    )
+)]
+#[post("/subscriptions")]
+pub async fn new_subscription(
+    state: web::Data<AppState>,
+    request: web::Json<NewSubscriptionRequest>,
+) -> ApiResult<SubscriptionDetail> {
+    if let Some(s) = request.season_number {
+        if s < 1 {
+            return Err(Error::InvalidArgument(
+                "season number must be greater than 0".to_string(),
+            ));
+        }
+    }
+
+    let resource_url = request.resource_url.as_deref().unwrap_or("").trim();
+    match request.resource_provider {
+        Provider::Rss => match Url::parse(resource_url) {
+            Ok(_) => (),
+            Err(_) => return Err(Error::InvalidArgument(format!("invalid rss url: {}", resource_url))),
+        },
+        Provider::Alist => {
+            if !resource_url.starts_with('/') {
+                return Err(Error::InvalidArgument(format!(
+                    "invalid alist dir path: {}",
+                    resource_url
+                )));
+            }
+        }
+    };
+
+    ok(create_subscription(state.as_ref(), &request).await?.into())
+}
+
+pub async fn create_subscription(state: &AppState, request: &NewSubscriptionRequest) -> Result<Model> {
+    if let Some(exist_sub) = query::get_by_unique_id(&state.db, request.unique_id().as_str()).await? {
         return Ok(exist_sub);
     }
 
@@ -34,9 +81,9 @@ pub async fn create_subscription(state: &AppState, request: &subscription::Model
         MediaType::Movie => todo!(),
     };
 
-    let sub = subscription::create::create_subscription(
+    let sub = create::create_subscription(
         &txn,
-        subscription::create::NewSubscription {
+        create::NewSubscription {
             unique_id: request.unique_id(),
             media_type: request.media_type,
             media_id,
