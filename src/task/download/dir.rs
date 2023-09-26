@@ -1,4 +1,7 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     common::enums::{FileType, MediaType},
@@ -176,6 +179,15 @@ fn get_subtitle_filename_lang(lang: &str, index: usize) -> String {
     }
 
     format!("{}.{}.", lang, index)
+}
+
+pub fn is_file_downloaded(library_root: &str, task_param: &DownloadMediaFileParam) -> Result<bool> {
+    let bash_path = format!("{library_root}{}", task_param.get_library_file_dir());
+    if !Path::new(&bash_path).exists() {
+        return Ok(false);
+    }
+
+    Ok(true)
 }
 
 #[cfg(test)]

@@ -42,8 +42,8 @@ async fn run_one_task(state: &AppState, t: &Model, message: &PushMessageParam) -
             // need retry sending message
             resend = true;
         }
-        Status::Done | Status::Failed => {
-            error!(task_id = t.id, "task alread done or failed, shoud not go to here");
+        Status::Done | Status::Failed | Status::Canceled => {
+            error!(task_id = t.id, "task alread done/failed/canceled, shoud not go to here");
             return Ok(());
         }
     }

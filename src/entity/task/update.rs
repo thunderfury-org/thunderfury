@@ -77,6 +77,24 @@ where
     Ok(())
 }
 
+pub async fn update_status_to_canceled<C>(db: &C, task_id: i32, msg: &str) -> Result<()>
+where
+    C: ConnectionTrait,
+{
+    Entity::update(ActiveModel {
+        id: Set(task_id),
+        status: Set(Status::Canceled),
+        end_time: Set(Some(Utc::now())),
+        error_msg: Set(Some(msg.to_owned())),
+        ..Default::default()
+    })
+    .filter(Column::Status.is_in([Status::Running, Status::Queued]))
+    .exec(db)
+    .await?;
+
+    Ok(())
+}
+
 pub async fn update_status_to_retry<C>(db: &C, task_id: i32, retry_count: i32, error_msg: &str) -> Result<()>
 where
     C: ConnectionTrait,

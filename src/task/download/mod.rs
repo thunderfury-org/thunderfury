@@ -23,14 +23,14 @@ mod submit;
 mod subscription;
 
 lazy_static::lazy_static!(
-    static ref DOWNLOAD_TASK_LIMIT_MAP: HashMap<Downloader, i32> = HashMap::from([
+    static ref DOWNLOAD_TASK_LIMIT_MAP: HashMap<Downloader, u32> = HashMap::from([
         (Downloader::Alist, 2),
         (Downloader::Bt, 5),
     ]);
 );
 
 pub async fn run_tasks(state: &AppState, tasks: Vec<task::Model>) {
-    let mut current_downloading_count_map: HashMap<Downloader, i32> =
+    let mut current_downloading_count_map: HashMap<Downloader, u32> =
         DOWNLOAD_TASK_LIMIT_MAP.keys().map(|d| (*d, 0)).collect();
 
     for t in &tasks {
@@ -59,8 +59,8 @@ async fn run_one_task(state: &AppState, t: &task::Model, task_param: &DownloadMe
     match t.status {
         task::Status::Queued => Ok(handle_queued_task(state, t.id, task_param).await?),
         task::Status::Running => Ok(handle_running_task(state, t, task_param).await?),
-        task::Status::Done | task::Status::Failed => {
-            error!(task_id = t.id, "task alread done or failed, shoud not go to here");
+        task::Status::Done | task::Status::Failed | task::Status::Canceled => {
+            error!(task_id = t.id, "task alread done/failed/canceled, shoud not go to here");
             Ok(false)
         }
     }
@@ -68,6 +68,11 @@ async fn run_one_task(state: &AppState, t: &task::Model, task_param: &DownloadMe
 
 async fn handle_queued_task(state: &AppState, task_id: i32, task_param: &DownloadMediaFileParam) -> Result<bool> {
     info!(task_id, "submit queued task to downloader, {:?}", task_param);
+
+    if dir::is_file_downloaded(state.config.get_library_root(), task_param)? {
+        cancel_task_because_file_downloaded(state, task_id, task_param).await?;
+        return Ok(false);
+    }
 
     let gid = submit::submit_task(state, task_param).await?;
 
@@ -183,4 +188,19 @@ async fn send_task_complete_message(db: &DatabaseTransaction, p: &DownloadMediaF
             create::create_send_message_task(db, &PushMessageParam::MovieDownloaded { movie_id: p.media_id }).await
         }
     }
+}
+
+async fn cancel_task_because_file_downloaded(
+    state: &AppState,
+    task_id: i32,
+    task_param: &DownloadMediaFileParam,
+) -> Result<()> {
+    info!(task_id, "file already downloaded, cancel task");
+
+    let txn = state.db.begin().await?;
+    update::update_status_to_canceled(&txn, task_id, "file already downloaded").await?;
+    media::update_status_to_downloaded(&txn, task_param).await?;
+    subscription::mark_subscription_done_if_complete(&txn, task_param).await?;
+    txn.commit().await?;
+    Ok(())
 }
