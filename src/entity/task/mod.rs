@@ -65,4 +65,7 @@ pub enum Status {
 
     #[sea_orm(string_value = "failed")]
     Failed,
+
+    #[sea_orm(string_value = "canceled")]
+    Canceled,
 }

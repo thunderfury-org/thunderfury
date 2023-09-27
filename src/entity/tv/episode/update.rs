@@ -88,7 +88,7 @@ where
         .filter(Column::TvId.eq(tv_id))
         .filter(Column::SeasonNumber.eq(season_number))
         .filter(Column::EpisodeNumber.eq(episode_number))
-        .filter(Column::Status.eq(Status::Downloading))
+        .filter(Column::Status.is_in([Status::Queued, Status::Downloading]))
         .exec(db)
         .await?;
 

@@ -3379,6 +3379,7 @@ dependencies = [
  "actix-web",
  "actix-web-static-files",
  "anyhow",
+ "async-trait",
  "backtrace",
  "base64 0.13.1",
  "bytes",
