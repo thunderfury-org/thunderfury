@@ -182,12 +182,20 @@ fn get_subtitle_filename_lang(lang: &str, index: usize) -> String {
 }
 
 pub fn is_file_downloaded(library_root: &str, task_param: &DownloadMediaFileParam) -> Result<bool> {
-    let bash_path = format!("{library_root}{}", task_param.get_library_file_dir());
-    if !Path::new(&bash_path).exists() {
+    let base_path = format!("{library_root}{}", task_param.get_library_file_dir());
+    if !Path::new(&base_path).exists() {
         return Ok(false);
     }
 
-    Ok(true)
+    let name_prefix = format!("{}.", task_param.get_base_file_name());
+
+    let files = std::fs::read_dir(base_path)?;
+    let count = files
+        .filter_map(std::result::Result::ok)
+        .filter(|d| d.file_name().to_str().unwrap().starts_with(&name_prefix))
+        .count();
+
+    Ok(count > 0)
 }
 
 #[cfg(test)]

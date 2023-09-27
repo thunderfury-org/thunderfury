@@ -14,7 +14,7 @@ use crate::{
         param::{DownloadMediaFileParam, PushMessageParam},
         update,
     },
-    utils::aria2,
+    utils::aria2::{self, Aria2Trait},
 };
 
 mod dir;

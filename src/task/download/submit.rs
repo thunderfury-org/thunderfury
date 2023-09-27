@@ -2,7 +2,11 @@ use super::dir;
 use crate::{
     common::{enums, error::Result, state::AppState},
     entity::task::param::DownloadMediaFileParam,
-    utils::{alist, aria2, fs, http},
+    utils::{
+        alist,
+        aria2::{self, Aria2Trait},
+        fs, http,
+    },
 };
 
 pub async fn submit_task(state: &AppState, task_param: &DownloadMediaFileParam) -> Result<String> {

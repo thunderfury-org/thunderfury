@@ -5,7 +5,7 @@ use crate::common::error::{Error, NotFoundCode, Result};
 
 use super::{
     model::{Request, Response},
-    Status, TaskOptions,
+    Aria2Trait, Status, TaskOptions,
 };
 
 pub struct Client {
@@ -67,7 +67,10 @@ impl Client {
             )))
         }
     }
+}
 
+#[async_trait::async_trait]
+impl Aria2Trait for Client {
     async fn add_uri(&self, uri: &str, options: &TaskOptions) -> Result<String> {
         self.call_method(
             "addUri",
