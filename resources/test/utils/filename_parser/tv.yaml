@@ -235,3 +235,14 @@
     episode_number: 7
     subtitles:
       - zh-TW
+
+- input: "甄嬛传 (2011).S01E01.WEB-DL.4K.H264.AAC-CYW.mp4"
+  expected:
+    file_type: "video"
+    extension: "mp4"
+    titles:
+      - title: "甄嬛传"
+        language: "zh"
+    season_number: 1
+    episode_number: 1
+    resolution: 2160p
