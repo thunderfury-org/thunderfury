@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 use lazy_static::lazy_static;
-use regex::Regex;
+use regex::{Captures, Regex};
 
 use super::{lang, EpisodeInfo, FileType, Title};
 
@@ -90,18 +90,8 @@ impl EpisodeInfo {
             static ref SIMPLE_EPISODE_NUMBER_RE: Regex = Regex::new(r"(?P<episode_number>\d{1,4})").unwrap();
         }
 
-        if let Some(caps) = SEASON_AND_EPISODE_NUMBER_RE.captures(filename) {
-            if let Some(season_number) = caps.name("season_number") {
-                self.season_number = Some(season_number.as_str().parse().unwrap());
-            }
-            if caps.name("episode_number2").is_some() {
-                // 不支持单个文件多集，或者合集资源
-            } else if let Some(episode_number) = caps.name("episode_number") {
-                self.episode_number = Some(episode_number.as_str().parse().unwrap());
-            }
-
-            let m = caps.get(0).unwrap();
-            Some((filename[..m.start()].trim(), filename[m.end()..].trim()))
+        if let Some(p) = self.try_parse_season_and_episode_number(filename) {
+            Some(p)
         } else if let Some(caps) = SIMPLE_EPISODE_NUMBER_RE.captures(filename) {
             if let Some(episode_number) = caps.name("episode_number") {
                 self.episode_number = Some(episode_number.as_str().parse().unwrap());
@@ -112,6 +102,53 @@ impl EpisodeInfo {
         } else {
             None
         }
+    }
+
+    fn try_parse_season_and_episode_number<'a>(&mut self, filename: &'a str) -> Option<(&'a str, &'a str)> {
+        lazy_static! {
+            static ref SEASON_AND_EPISODE_NUMBER_RE: Regex =
+                Regex::new(r"(?i)(\[?S(eason)?\s*(?P<season_number>\d{1,2})\s*\]?\s*)?([\[|E]|(\-\s+)|(#\s*))(?P<episode_number>\d{1,4})(-(?P<episode_number2>\d{1,4}))?").unwrap();
+        }
+
+        let mut all_caps: Vec<Captures<'_>> = vec![];
+
+        for caps in SEASON_AND_EPISODE_NUMBER_RE.captures_iter(filename) {
+            self.season_number = None;
+            self.episode_number = None;
+
+            if let Some(season_number) = caps.name("season_number") {
+                self.season_number = Some(season_number.as_str().parse().unwrap());
+            }
+            if caps.name("episode_number2").is_some() {
+                // 不支持单个文件多集，或者合集资源
+            } else if let Some(episode_number) = caps.name("episode_number") {
+                self.episode_number = Some(episode_number.as_str().parse().unwrap());
+            }
+
+            if self.season_number.is_some() && self.episode_number.is_some() {
+                let m = caps.get(0).unwrap();
+                return Some((filename[..m.start()].trim(), filename[m.end()..].trim()));
+            } else {
+                all_caps.push(caps);
+            }
+        }
+
+        all_caps.first().map(|c| {
+            self.season_number = None;
+            self.episode_number = None;
+
+            if let Some(season_number) = c.name("season_number") {
+                self.season_number = Some(season_number.as_str().parse().unwrap());
+            }
+            if c.name("episode_number2").is_some() {
+                // 不支持单个文件多集，或者合集资源
+            } else if let Some(episode_number) = c.name("episode_number") {
+                self.episode_number = Some(episode_number.as_str().parse().unwrap());
+            }
+
+            let m = c.get(0).unwrap();
+            (filename[..m.start()].trim(), filename[m.end()..].trim())
+        })
     }
 
     fn parse_title(&mut self, filename: &str) {
